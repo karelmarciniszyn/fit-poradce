@@ -368,6 +368,7 @@
 
             <!-- Settings Panel -->
             <div class="settings-container" id="settingsPanel">
+                <h3 style="font-size: 1.1em; margin-bottom: 15px; color: #333;">Osobní údaje</h3>
                 <div class="settings-grid">
                     <div class="form-group">
                         <label for="age">Věk (roky)</label>
@@ -388,6 +389,20 @@
                             <option value="female">Žena</option>
                         </select>
                     </div>
+                </div>
+
+                <h3 style="font-size: 1.1em; margin-top: 20px; margin-bottom: 15px; color: #333;">API konfigurace</h3>
+                <div class="form-group">
+                    <label for="apiKey">Claude API Key</label>
+                    <input
+                        type="password"
+                        id="apiKey"
+                        placeholder="Zadej svůj Claude API key"
+                        onchange="saveAPIKey()"
+                    >
+                    <p style="font-size: 0.85em; color: #666; margin-top: 8px;">
+                        Klíč je uložen pouze v tvém prohlížeči. Získáš jej na <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+                    </p>
                 </div>
             </div>
 
@@ -417,20 +432,6 @@
         </div>
 
         <div class="content">
-            <!-- API Key Setup -->
-            <div class="api-key-input">
-                <label for="apiKey">🔑 Claude API Key</label>
-                <input
-                    type="password"
-                    id="apiKey"
-                    placeholder="Zadej svůj Claude API key"
-                    value=""
-                >
-                <p>
-                    Klíč není uložen. Získáš jej na <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
-                </p>
-            </div>
-
             <!-- Section 1: Odhad kalorií -->
             <div class="section">
                 <h2>🍽️ Odhad kalorií</h2>
@@ -562,6 +563,16 @@
             updateUserDisplay();
         }
 
+        function saveAPIKey() {
+            const apiKey = document.getElementById('apiKey').value;
+            localStorage.setItem('claudeAPIKey', apiKey);
+        }
+
+        function loadAPIKey() {
+            const apiKey = localStorage.getItem('claudeAPIKey') || '';
+            document.getElementById('apiKey').value = apiKey;
+        }
+
         function getUserSettings() {
             return JSON.parse(localStorage.getItem('userSettings')) || {
                 age: 50,
@@ -579,13 +590,17 @@
         timeInput.value = `${hours}:${minutes}`;
 
         // Load user settings on page load
-        window.addEventListener('load', loadUserSettings);
+        window.addEventListener('load', function() {
+            loadUserSettings();
+            loadAPIKey();
+        });
 
         async function callClaudeAPI(prompt, skillName) {
-            const apiKey = document.getElementById('apiKey').value;
+            let apiKey = localStorage.getItem('claudeAPIKey') || document.getElementById('apiKey').value;
 
             if (!apiKey) {
-                alert('Prosím, zadej svůj Claude API key');
+                alert('Prosím, klikni na "Upravit profil" a zadej svůj Claude API key');
+                document.getElementById('settingsPanel').classList.add('open');
                 document.getElementById('apiKey').focus();
                 return null;
             }
