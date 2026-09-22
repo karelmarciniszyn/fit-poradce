@@ -1,0 +1,46 @@
+{
+  "skill_name": "doporučeni-kaloric",
+  "description": "Testovací případy pro skill doporučeni-kaloric",
+  "evals": [
+    {
+      "id": 1,
+      "eval_name": "afternoon-1200-consumed",
+      "prompt": "Konzumoval jsem 1200 kcal do 14:00, je teď 14:30, zbývá mi zbytek dne. Kolik si mám dát k večeři a co konkrétního?",
+      "expected_output": "~1000 kcal zbývá. Doporučení na svačinu (150-200 kcal) a večeři (800-850 kcal) s konkrétními jídly.",
+      "assertions": [
+        "Vrácení je JSON formátu",
+        "Obsahuje 'remaining_calories': 1000",
+        "Doporučuje 2 jídla (svačina + večeře)",
+        "Nabízí 2-3 možnosti pro každé jídlo",
+        "Confidence 70-80%"
+      ]
+    },
+    {
+      "id": 2,
+      "eval_name": "morning-800-consumed",
+      "prompt": "Snídaně měla 800 kcal, teď je 10:00, plánuji normální den. Kolik kalorií zbývá a jak si mám rozprostřít jídla?",
+      "expected_output": "~1400 kcal zbývá na oběd, svačinu a večeři. Doporučení rozprostřít na 3 jídla.",
+      "assertions": [
+        "JSON formát",
+        "Remaining calories: 1400",
+        "Zbývající jídla: oběd (400-450 kcal) + svačina (200-250 kcal) + večeře (700-750 kcal)",
+        "Konkrétní doporučení pro každé jídlo",
+        "Confidence 75-85%"
+      ]
+    },
+    {
+      "id": 3,
+      "eval_name": "evening-2000-consumed",
+      "prompt": "Už jsem konzumoval 2000 kcal a je 18:30. Zbývá mi jen 200 kcal do cíle. Co si mám dát?",
+      "expected_output": "Pouze lehká svačina s 150-200 kcal nebo vůbec nic",
+      "assertions": [
+        "JSON formát",
+        "Remaining calories: 200",
+        "Doporučuje pouze lehkou svačinu",
+        "Návrhy: jogurt, ovoce, nebo vůbec nic",
+        "Vysvětluje, že večeře by byla příliš vysoká",
+        "Confidence 80-90%"
+      ]
+    }
+  ]
+}
