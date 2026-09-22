@@ -217,6 +217,33 @@
             font-style: italic;
         }
 
+        .handoff {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0f2ff;
+            border-radius: 8px;
+            border: 1px solid #d5daf5;
+        }
+
+        .handoff p {
+            font-size: 0.9em;
+            color: #444;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .handoff-button {
+            width: auto;
+            padding: 10px 20px;
+            font-size: 0.95em;
+        }
+
+        .handoff textarea {
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+
         footer {
             background: #f5f7fa;
             padding: 20px;
@@ -442,22 +469,74 @@
         // Offline food database. `stems` are matched as substrings, so they are kept
         // short enough to survive Czech declension ('rýž' matches rýže/rýží/rýži).
         // `base` + `unit` describe the portion the nutrition values refer to.
+        // Entries are deliberately one-per-food-word. Splitting "kuřecí prsa" and
+        // "kuřecí stehna" apart would make both stems fire on the same phrase and count
+        // the meat twice, so close variants share one averaged entry instead.
         const foodDatabase = [
-            { name: 'Kuřecí prsa',   stems: ['kuřec'],                  kcal: 120, protein: 26,  fat: 1.5, carbs: 0,   base: 100, unit: 'g' },
-            { name: 'Hovězí maso',   stems: ['hověz'],                  kcal: 200, protein: 26,  fat: 11,  carbs: 0,   base: 100, unit: 'g' },
-            { name: 'Losos',         stems: ['losos'],                  kcal: 206, protein: 20,  fat: 13,  carbs: 0,   base: 100, unit: 'g' },
-            { name: 'Rýže',          stems: ['rýž'],                    kcal: 130, protein: 2.5, fat: 0.3, carbs: 28,  base: 100, unit: 'g' },
-            { name: 'Těstoviny',     stems: ['těstovin'],               kcal: 130, protein: 4.5, fat: 1,   carbs: 26,  base: 100, unit: 'g' },
-            { name: 'Brambory',      stems: ['brambor'],                kcal: 70,  protein: 2,   fat: 0.1, carbs: 15,  base: 100, unit: 'g' },
-            { name: 'Chléb',         stems: ['chleb', 'chléb'],         kcal: 77,  protein: 2.7, fat: 1.1, carbs: 14,  base: 30,  unit: 'g', piece: 'krajíc' },
-            { name: 'Vejce',         stems: ['vejc', 'vajec', 'vajíč'], kcal: 70,  protein: 6,   fat: 5,   carbs: 0.5, base: 50,  unit: 'g', piece: 'ks' },
-            { name: 'Mléko',         stems: ['mlék'],                   kcal: 140, protein: 6.5, fat: 7,   carbs: 8,   base: 200, unit: 'ml' },
-            { name: 'Jogurt',        stems: ['jogurt'],                 kcal: 100, protein: 10,  fat: 1.5, carbs: 7,   base: 150, unit: 'g' },
-            { name: 'Jablko',        stems: ['jablk'],                  kcal: 65,  protein: 0.3, fat: 0.2, carbs: 17,  base: 150, unit: 'g', piece: 'ks' },
-            { name: 'Banán',         stems: ['banán'],                  kcal: 105, protein: 1.3, fat: 0.3, carbs: 27,  base: 120, unit: 'g', piece: 'ks' },
-            { name: 'Rajská omáčka', stems: ['rajsk', 'rajčat'],        kcal: 30,  protein: 1,   fat: 0.3, carbs: 6,   base: 100, unit: 'g' },
-            { name: 'Olej',          stems: ['olej'],                   kcal: 120, protein: 0,   fat: 14,  carbs: 0,   base: 10,  unit: 'g' },
-            { name: 'Máslo',         stems: ['másl'],                   kcal: 72,  protein: 0,   fat: 8,   carbs: 0,   base: 10,  unit: 'g' }
+            // Pečivo, přílohy a obiloviny
+            { name: 'Chléb',         stems: ['chleb', 'chléb'],            kcal: 77,  protein: 2.7, fat: 1.1, carbs: 14,  base: 30,  unit: 'g',  piece: 'krajíc' },
+            { name: 'Toustový chléb',stems: ['toust'],                     kcal: 66,  protein: 2.2, fat: 0.9, carbs: 12,  base: 25,  unit: 'g',  piece: 'ks' },
+            { name: 'Rohlík',        stems: ['rohlík', 'rohlik'],          kcal: 120, protein: 4,   fat: 1.5, carbs: 22,  base: 43,  unit: 'g',  piece: 'ks' },
+            { name: 'Houska',        stems: ['housk'],                     kcal: 120, protein: 4,   fat: 1.5, carbs: 22,  base: 43,  unit: 'g',  piece: 'ks' },
+            { name: 'Knedlík',       stems: ['knedlík', 'knedlik'],        kcal: 100, protein: 3,   fat: 0.7, carbs: 20,  base: 40,  unit: 'g',  piece: 'ks' },
+            { name: 'Těstoviny',     stems: ['těstovin'],                  kcal: 130, protein: 4.5, fat: 1,   carbs: 26,  base: 100, unit: 'g' },
+            { name: 'Rýže',          stems: ['rýž'],                       kcal: 130, protein: 2.5, fat: 0.3, carbs: 28,  base: 100, unit: 'g' },
+            { name: 'Brambory',      stems: ['brambor'],                   kcal: 70,  protein: 2,   fat: 0.1, carbs: 15,  base: 100, unit: 'g' },
+            { name: 'Hranolky',      stems: ['hranolk'],                   kcal: 310, protein: 3.4, fat: 15,  carbs: 41,  base: 100, unit: 'g' },
+
+            // Maso, ryby a uzeniny
+            { name: 'Kuřecí maso',   stems: ['kuřec'],                     kcal: 150, protein: 24,  fat: 5,   carbs: 0,   base: 100, unit: 'g' },
+            { name: 'Hovězí maso',   stems: ['hověz'],                     kcal: 200, protein: 26,  fat: 11,  carbs: 0,   base: 100, unit: 'g' },
+            { name: 'Vepřové maso',  stems: ['vepřov'],                    kcal: 245, protein: 26,  fat: 15,  carbs: 0,   base: 100, unit: 'g' },
+            { name: 'Játra',         stems: ['játr', 'jater'],             kcal: 135, protein: 26,  fat: 3.6, carbs: 3.6, base: 100, unit: 'g' },
+            { name: 'Řízek',         stems: ['řízek', 'řízk'],             kcal: 380, protein: 25,  fat: 22,  carbs: 18,  base: 150, unit: 'g',  piece: 'ks' },
+            { name: 'Losos',         stems: ['losos'],                     kcal: 206, protein: 20,  fat: 13,  carbs: 0,   base: 100, unit: 'g' },
+            { name: 'Treska',        stems: ['tresk'],                     kcal: 82,  protein: 18,  fat: 0.7, carbs: 0,   base: 100, unit: 'g' },
+            { name: 'Tuňák',         stems: ['tuňák', 'tunak'],            kcal: 99,  protein: 23,  fat: 0.7, carbs: 0,   base: 100, unit: 'g' },
+            { name: 'Šunka',         stems: ['šunk'],                      kcal: 110, protein: 18,  fat: 4,   carbs: 1,   base: 100, unit: 'g' },
+            { name: 'Klobása',       stems: ['klobás'],                    kcal: 300, protein: 13,  fat: 27,  carbs: 1,   base: 100, unit: 'g' },
+
+            // Vejce a mléčné výrobky
+            { name: 'Vejce',         stems: ['vejc', 'vajec', 'vajíč'],    kcal: 70,  protein: 6,   fat: 5,   carbs: 0.5, base: 50,  unit: 'g',  piece: 'ks' },
+            { name: 'Mléko',         stems: ['mlék'],                      kcal: 140, protein: 6.5, fat: 7,   carbs: 8,   base: 200, unit: 'ml' },
+            { name: 'Jogurt',        stems: ['jogurt'],                    kcal: 100, protein: 10,  fat: 1.5, carbs: 7,   base: 150, unit: 'g' },
+            { name: 'Sýr',           stems: ['sýr'],                       kcal: 100, protein: 7,   fat: 8,   carbs: 0.5, base: 30,  unit: 'g' },
+            { name: 'Tvaroh',        stems: ['tvaroh'],                    kcal: 115, protein: 12,  fat: 5,   carbs: 3.7, base: 100, unit: 'g' },
+            { name: 'Smetana',       stems: ['smetan'],                    kcal: 200, protein: 2.5, fat: 20,  carbs: 3,   base: 100, unit: 'ml' },
+            { name: 'Máslo',         stems: ['másl'],                      kcal: 72,  protein: 0,   fat: 8,   carbs: 0,   base: 10,  unit: 'g' },
+
+            // Ovoce
+            { name: 'Jablko',        stems: ['jablk'],                     kcal: 65,  protein: 0.3, fat: 0.2, carbs: 17,  base: 150, unit: 'g',  piece: 'ks' },
+            { name: 'Banán',         stems: ['banán', 'banan'],            kcal: 105, protein: 1.3, fat: 0.3, carbs: 27,  base: 120, unit: 'g',  piece: 'ks' },
+            { name: 'Pomeranč',      stems: ['pomeranč'],                  kcal: 60,  protein: 0.9, fat: 0.1, carbs: 15,  base: 150, unit: 'g',  piece: 'ks' },
+            { name: 'Hruška',        stems: ['hrušk'],                     kcal: 60,  protein: 0.4, fat: 0.1, carbs: 15,  base: 150, unit: 'g',  piece: 'ks' },
+            { name: 'Jahody',        stems: ['jahod'],                     kcal: 32,  protein: 0.7, fat: 0.3, carbs: 7.7, base: 100, unit: 'g' },
+            { name: 'Borůvky',       stems: ['borůvk'],                    kcal: 44,  protein: 0.7, fat: 0.3, carbs: 10,  base: 100, unit: 'g' },
+            { name: 'Meloun',        stems: ['melou'],                     kcal: 40,  protein: 0.8, fat: 0.2, carbs: 9,   base: 150, unit: 'g' },
+            { name: 'Ananas',        stems: ['ananas'],                    kcal: 50,  protein: 0.5, fat: 0.1, carbs: 13,  base: 100, unit: 'g' },
+
+            // Zelenina
+            { name: 'Cibule',        stems: ['cibul'],                     kcal: 40,  protein: 1.1, fat: 0.1, carbs: 9,   base: 100, unit: 'g' },
+            { name: 'Mrkev',         stems: ['mrkev', 'mrkv'],             kcal: 41,  protein: 0.9, fat: 0.2, carbs: 10,  base: 100, unit: 'g' },
+            { name: 'Brokolice',     stems: ['brokolic'],                  kcal: 34,  protein: 2.8, fat: 0.4, carbs: 7,   base: 100, unit: 'g' },
+            { name: 'Květák',        stems: ['květák', 'kvetak'],          kcal: 25,  protein: 1.9, fat: 0.1, carbs: 4.9, base: 100, unit: 'g' },
+            { name: 'Rajče',         stems: ['rajče', 'rajčat'],           kcal: 18,  protein: 0.9, fat: 0.2, carbs: 3.9, base: 100, unit: 'g' },
+            { name: 'Paprika',       stems: ['paprik'],                    kcal: 31,  protein: 1,   fat: 0.3, carbs: 6,   base: 100, unit: 'g' },
+            { name: 'Okurka',        stems: ['okurk'],                     kcal: 15,  protein: 0.7, fat: 0.1, carbs: 3.6, base: 100, unit: 'g' },
+            { name: 'Česnek',        stems: ['česnek', 'česnk'],           kcal: 15,  protein: 0.6, fat: 0,   carbs: 3,   base: 10,  unit: 'g' },
+            { name: 'Rajská omáčka', stems: ['rajsk'],                     kcal: 30,  protein: 1,   fat: 0.3, carbs: 6,   base: 100, unit: 'g' },
+
+            // Tuky
+            { name: 'Olej',          stems: ['olej'],                      kcal: 120, protein: 0,   fat: 14,  carbs: 0,   base: 10,  unit: 'g' },
+            { name: 'Sádlo',         stems: ['sádl'],                      kcal: 90,  protein: 0,   fat: 10,  carbs: 0,   base: 10,  unit: 'g' },
+
+            // Nápoje
+            { name: 'Voda',          stems: ['voda', 'vody'],              kcal: 0,   protein: 0,   fat: 0,   carbs: 0,   base: 200, unit: 'ml' },
+            { name: 'Čaj',           stems: ['čaj'],                       kcal: 0,   protein: 0,   fat: 0,   carbs: 0,   base: 200, unit: 'ml' },
+            { name: 'Káva',          stems: ['káva', 'kávu', 'kávy'],      kcal: 2,   protein: 0.2, fat: 0,   carbs: 0.3, base: 200, unit: 'ml' },
+            { name: 'Džus',          stems: ['džus', 'juice'],             kcal: 90,  protein: 0.7, fat: 0.1, carbs: 22,  base: 200, unit: 'ml' },
+            { name: 'Pivo',          stems: ['pivo', 'piva', 'pivem'],     kcal: 140, protein: 1.3, fat: 0,   carbs: 11,  base: 330, unit: 'ml' },
+            { name: 'Víno',          stems: ['víno', 'vína', 'vínem'],     kcal: 110, protein: 0.2, fat: 0,   carbs: 2,   base: 150, unit: 'ml' }
         ];
 
         const QUANTITY_WINDOW = 25;
@@ -580,12 +659,12 @@
                 }
 
                 items.push({
-                    item: food.name,
-                    amount: amount,
-                    calories: Math.round(food.kcal * multiplier),
-                    protein: Math.round(food.protein * multiplier * 10) / 10,
-                    fat: Math.round(food.fat * multiplier * 10) / 10,
-                    carbs: Math.round(food.carbs * multiplier * 10) / 10
+                    potravina: food.name,
+                    mnozstvi: amount,
+                    kcal: Math.round(food.kcal * multiplier),
+                    bilkoviny_g: Math.round(food.protein * multiplier * 10) / 10,
+                    tuky_g: Math.round(food.fat * multiplier * 10) / 10,
+                    sacharidy_g: Math.round(food.carbs * multiplier * 10) / 10
                 });
 
                 totalCalories += food.kcal * multiplier;
@@ -594,27 +673,31 @@
                 totalCarbs += food.carbs * multiplier;
             }
 
-            let confidence = 30;
-            let confidenceReason = 'Žádná potravina nebyla rozpoznána';
-            if (items.length > 0) {
-                confidence = 55 + Math.round((explicitAmounts / items.length) * 30);
-                confidenceReason = explicitAmounts === items.length
-                    ? 'Všechny potraviny měly uvedené množství'
-                    : 'U části potravin bylo množství odhadnuto podle běžné porce';
+            // A zero total reads as "this meal has no calories" rather than "I do not
+            // know this food", so an unrecognised input reports no numbers at all.
+            if (items.length === 0) {
+                return {
+                    popis: rawInput,
+                    rozpoznano: false,
+                    poznamka: 'Tohle jídlo není v lokální databázi, takže odhad nemám. '
+                        + 'Zkus vypsat jednotlivé suroviny (např. "150g kuřecího masa a 100g rýže") '
+                        + 'nebo si ho nech spočítat od Claude.'
+                };
             }
 
             return {
-                food_description: rawInput,
-                parsed_items: items,
-                total_calories: Math.round(totalCalories),
-                total_protein: Math.round(totalProtein * 10) / 10,
-                total_fat: Math.round(totalFat * 10) / 10,
-                total_carbs: Math.round(totalCarbs * 10) / 10,
-                confidence: confidence,
-                confidence_reason: confidenceReason,
-                notes: items.length === 0
-                    ? 'Potravina nebyla v databázi. Zkus ji pojmenovat jinak, např. "kuřecí prsa 150g".'
-                    : 'Odhad z lokální databáze běžných potravin.'
+                popis: rawInput,
+                rozpoznano: true,
+                polozky: items,
+                celkem_kcal: Math.round(totalCalories),
+                bilkoviny_g: Math.round(totalProtein * 10) / 10,
+                tuky_g: Math.round(totalFat * 10) / 10,
+                sacharidy_g: Math.round(totalCarbs * 10) / 10,
+                spolehlivost: 55 + Math.round((explicitAmounts / items.length) * 30),
+                spolehlivost_duvod: explicitAmounts === items.length
+                    ? 'Všechny potraviny měly uvedené množství'
+                    : 'U části potravin bylo množství odhadnuto podle běžné porce',
+                poznamka: 'Odhad z lokální databáze běžných potravin.'
             };
         }
 
@@ -712,6 +795,71 @@
         // Load user settings on page load
         window.addEventListener('load', loadUserSettings);
 
+        // The result contains text the user typed, so it is written with textContent.
+        // Going through innerHTML would execute markup pasted into the food field.
+        function showResult(container, data, extraNode) {
+            container.textContent = '';
+
+            const pre = document.createElement('pre');
+            pre.textContent = JSON.stringify(data, null, 2);
+            container.appendChild(pre);
+
+            if (extraNode) container.appendChild(extraNode);
+        }
+
+        function buildClaudePrompt(foodInput) {
+            return 'Použij skill odhad-kaloric a odhadni kalorie a makronutrienty.\n\n'
+                + 'Snědl jsem: ' + foodInput;
+        }
+
+        // The local database only knows the foods listed above, so anything else would
+        // come out as a bare zero. Handing the text to Claude keeps the page useful
+        // without an API key: the user pastes the prompt and the skill does the work.
+        function buildHandoff(foodInput, recognisedNothing) {
+            const box = document.createElement('div');
+            box.className = 'handoff';
+
+            const message = document.createElement('p');
+            message.textContent = recognisedNothing
+                ? 'Tohle jídlo nemám v databázi, takže odhad není k dispozici. Nech ho spočítat Claude — zvládne i jídla, která tu nejsou.'
+                : 'Sedí ti odhad? Claude zvládne i suroviny, které tu nejsou, a přesnější porce.';
+            box.appendChild(message);
+
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'handoff-button';
+            button.textContent = '💬 Zeptat se Claude';
+            button.addEventListener('click', function () {
+                const prompt = buildClaudePrompt(foodInput);
+                navigator.clipboard.writeText(prompt).then(function () {
+                    button.textContent = '✅ Zkopírováno, otevírám Claude…';
+                    window.open('https://claude.ai', '_blank', 'noopener');
+                }).catch(function () {
+                    // Clipboard is blocked without a secure context or permission;
+                    // showing the prompt lets the user copy it by hand.
+                    showManualPrompt(box, prompt);
+                });
+            });
+            box.appendChild(button);
+
+            return box;
+        }
+
+        function showManualPrompt(box, prompt) {
+            if (box.querySelector('textarea')) return;
+
+            const hint = document.createElement('p');
+            hint.textContent = 'Zkopírovat do schránky se nepodařilo. Vezmi si text ručně:';
+            box.appendChild(hint);
+
+            const field = document.createElement('textarea');
+            field.readOnly = true;
+            field.rows = 3;
+            field.value = prompt;
+            box.appendChild(field);
+            field.select();
+        }
+
         function estimateCalories() {
             const foodInput = document.getElementById('foodInput').value;
 
@@ -721,11 +869,11 @@
             }
 
             const output = document.getElementById('foodOutput');
-            const outputContent = document.getElementById('foodOutputContent');
             const result = estimateCaloriesOffline(foodInput);
+            const handoff = buildHandoff(foodInput, !result.rozpoznano);
 
             output.classList.add('visible');
-            outputContent.innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
+            showResult(document.getElementById('foodOutputContent'), result, handoff);
         }
 
         const MEAL_NAMES = {
@@ -817,11 +965,10 @@
             }
 
             const output = document.getElementById('mealsOutput');
-            const outputContent = document.getElementById('mealsOutputContent');
             const result = recommendMealsOffline(parseInt(consumed), time, getUserSettings());
 
             output.classList.add('visible');
-            outputContent.innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
+            showResult(document.getElementById('mealsOutputContent'), result);
         }
 
         // Allow Enter in textareas

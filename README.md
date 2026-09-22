@@ -28,11 +28,15 @@ i potraviny, které nikdo předem nevyjmenoval:
 2. **doporučeni-kaloric** — doporučí plán na zbytek dne
 
 **Webová stránka** (`index.html`) — počítá si vlastním JavaScriptem nad databází
-patnácti běžných potravin. Stránka skills nevolá a na nic se nepřipojuje.
+zhruba padesáti běžných potravin. Stránka skills nevolá a na nic se nepřipojuje.
 
 Kompromis je vědomý: stránka je vstupní branou pro reklamu, takže musí fungovat
-okamžitě a bez přihlašování. Cenou je, že rozpozná jen potraviny ze své databáze
-a u neznámé vrátí nulu s vysvětlením. Na přesnější odhad slouží skills v Claude.
+okamžitě a bez přihlašování. Cenou je, že rozpozná jen potraviny ze své databáze —
+hotová jídla jako svíčková nebo sushi v ní nejsou a nikdy všechna nebudou.
+
+Když potravinu nezná, stránka nevrací nulu, ale přizná, že odhad nemá, a nabídne
+tlačítko, které zkopíruje připravený prompt a otevře Claude. Tam už jídlo odhadne
+skill `odhad-kaloric`, který si s volným textem poradí. Žádný API klíč to nevyžaduje.
 
 ## Webové rozhraní
 

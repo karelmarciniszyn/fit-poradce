@@ -72,12 +72,21 @@ Skill a webová stránka jsou dvě oddělené cesty ke stejnému výsledku:
 
 - **Skill** (tenhle soubor) běží v Claude. Zvládne volný text, neznámé potraviny
   i odhad podle kontextu, protože odhaduje model.
-- **`index.html`** obsahuje vlastní offline odhad v JavaScriptu nad malou databází
-  patnácti běžných potravin. Funguje bez API klíče a bez připojení, ale rozpozná
+- **`index.html`** obsahuje vlastní offline odhad v JavaScriptu nad databází zhruba
+  padesáti běžných potravin. Funguje bez API klíče a bez připojení, ale rozpozná
   jen to, co má v databázi.
 
-Stránka skill **nevolá** — není mezi nimi žádné API propojení. Pokud potřebuješ
-přesnější odhad než ten offline, spusť tenhle skill přímo v Claude.
+Stránka skill **nevolá** — není mezi nimi žádné API propojení. Když ale potravinu
+nezná, nabídne tlačítko, které do schránky zkopíruje připravený prompt ve tvaru:
+
+```
+Použij skill odhad-kaloric a odhadni kalorie a makronutrienty.
+
+Snědl jsem: <text od uživatele>
+```
+
+Uživatel si ho vloží do Claude a odhad odpracuje tenhle skill. Proto dává smysl
+držet formát výstupu stabilní — prompt na něj spoléhá.
 
 ## Testování
 
