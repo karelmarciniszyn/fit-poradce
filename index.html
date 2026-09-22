@@ -217,47 +217,6 @@
             font-style: italic;
         }
 
-        .api-key-warning {
-            background: #fffbea;
-            border: 2px solid #ffc107;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            color: #856404;
-        }
-
-        .api-key-warning strong {
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .api-key-input {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #f5f7fa;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
-
-        .api-key-input input {
-            margin-bottom: 10px;
-        }
-
-        .api-key-input p {
-            font-size: 0.9em;
-            color: #666;
-            margin-top: 10px;
-        }
-
-        .api-key-input a {
-            color: #667eea;
-            text-decoration: none;
-        }
-
-        .api-key-input a:hover {
-            text-decoration: underline;
-        }
-
         footer {
             background: #f5f7fa;
             padding: 20px;
@@ -390,20 +349,6 @@
                         </select>
                     </div>
                 </div>
-
-                <h3 style="font-size: 1.1em; margin-top: 20px; margin-bottom: 15px; color: #333;">API konfigurace</h3>
-                <div class="form-group">
-                    <label for="apiKey">Claude API Key</label>
-                    <input
-                        type="password"
-                        id="apiKey"
-                        placeholder="Zadej svůj Claude API key"
-                        onchange="saveAPIKey()"
-                    >
-                    <p style="font-size: 0.85em; color: #666; margin-top: 8px;">
-                        Klíč je uložen pouze v tvém prohlížeči. Získáš jej na <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
-                    </p>
-                </div>
             </div>
 
             <!-- Display Current Settings -->
@@ -487,77 +432,189 @@
 
         <footer>
             <p>
-                🤖 Fit Poradce | Powered by <a href="https://claude.ai" target="_blank">Claude AI</a> |
-                <a href="https://github.com" target="_blank">GitHub</a> |
-                Odesláno na: <a href="mailto:petr.rozkoschny@ictpro.cz">petr.rozkoschny@ictpro.cz</a>
+                🥗 Fit Poradce | Odhady počítá tvůj prohlížeč, nic se nikam neodesílá |
+                <a href="https://github.com/karelmarciniszyn/fit-poradce" target="_blank" rel="noopener">Zdrojový kód na GitHubu</a>
             </p>
         </footer>
     </div>
 
     <script>
-        // Offline food database (simple quick estimates)
-        const foodDatabase = {
-            'kuřecí prsa': { calories: 120, protein: 26, fat: 1.5, carbs: 0, unit: '100g' },
-            'hovězí': { calories: 200, protein: 26, fat: 11, carbs: 0, unit: '100g' },
-            'losos': { calories: 206, protein: 20, fat: 13, carbs: 0, unit: '100g' },
-            'rýže': { calories: 130, protein: 2.5, fat: 0.3, carbs: 28, unit: '100g' },
-            'těstoviny': { calories: 130, protein: 4.5, fat: 1, carbs: 26, unit: '100g' },
-            'brambory': { calories: 70, protein: 2, fat: 0.1, carbs: 15, unit: '100g' },
-            'chleb': { calories: 77, protein: 2.7, fat: 1.1, carbs: 14, unit: '30g' },
-            'vejce': { calories: 70, protein: 6, fat: 5, carbs: 0.5, unit: '50g' },
-            'mléko': { calories: 140, protein: 6.5, fat: 7, carbs: 8, unit: '200ml' },
-            'jogurt': { calories: 100, protein: 10, fat: 1.5, carbs: 7, unit: '150g' },
-            'jablko': { calories: 65, protein: 0.3, fat: 0.2, carbs: 17, unit: '150g' },
-            'banán': { calories: 105, protein: 1.3, fat: 0.3, carbs: 27, unit: '120g' },
-            'rajská omáčka': { calories: 30, protein: 1, fat: 0.3, carbs: 6, unit: '100g' },
-            'olivový olej': { calories: 120, protein: 0, fat: 14, carbs: 0, unit: '10g' },
-            'máslo': { calories: 72, protein: 0, fat: 8, carbs: 0, unit: '10g' }
+        // Offline food database. `stems` are matched as substrings, so they are kept
+        // short enough to survive Czech declension ('rýž' matches rýže/rýží/rýži).
+        // `base` + `unit` describe the portion the nutrition values refer to.
+        const foodDatabase = [
+            { name: 'Kuřecí prsa',   stems: ['kuřec'],                  kcal: 120, protein: 26,  fat: 1.5, carbs: 0,   base: 100, unit: 'g' },
+            { name: 'Hovězí maso',   stems: ['hověz'],                  kcal: 200, protein: 26,  fat: 11,  carbs: 0,   base: 100, unit: 'g' },
+            { name: 'Losos',         stems: ['losos'],                  kcal: 206, protein: 20,  fat: 13,  carbs: 0,   base: 100, unit: 'g' },
+            { name: 'Rýže',          stems: ['rýž'],                    kcal: 130, protein: 2.5, fat: 0.3, carbs: 28,  base: 100, unit: 'g' },
+            { name: 'Těstoviny',     stems: ['těstovin'],               kcal: 130, protein: 4.5, fat: 1,   carbs: 26,  base: 100, unit: 'g' },
+            { name: 'Brambory',      stems: ['brambor'],                kcal: 70,  protein: 2,   fat: 0.1, carbs: 15,  base: 100, unit: 'g' },
+            { name: 'Chléb',         stems: ['chleb', 'chléb'],         kcal: 77,  protein: 2.7, fat: 1.1, carbs: 14,  base: 30,  unit: 'g', piece: 'krajíc' },
+            { name: 'Vejce',         stems: ['vejc', 'vajec', 'vajíč'], kcal: 70,  protein: 6,   fat: 5,   carbs: 0.5, base: 50,  unit: 'g', piece: 'ks' },
+            { name: 'Mléko',         stems: ['mlék'],                   kcal: 140, protein: 6.5, fat: 7,   carbs: 8,   base: 200, unit: 'ml' },
+            { name: 'Jogurt',        stems: ['jogurt'],                 kcal: 100, protein: 10,  fat: 1.5, carbs: 7,   base: 150, unit: 'g' },
+            { name: 'Jablko',        stems: ['jablk'],                  kcal: 65,  protein: 0.3, fat: 0.2, carbs: 17,  base: 150, unit: 'g', piece: 'ks' },
+            { name: 'Banán',         stems: ['banán'],                  kcal: 105, protein: 1.3, fat: 0.3, carbs: 27,  base: 120, unit: 'g', piece: 'ks' },
+            { name: 'Rajská omáčka', stems: ['rajsk', 'rajčat'],        kcal: 30,  protein: 1,   fat: 0.3, carbs: 6,   base: 100, unit: 'g' },
+            { name: 'Olej',          stems: ['olej'],                   kcal: 120, protein: 0,   fat: 14,  carbs: 0,   base: 10,  unit: 'g' },
+            { name: 'Máslo',         stems: ['másl'],                   kcal: 72,  protein: 0,   fat: 8,   carbs: 0,   base: 10,  unit: 'g' }
+        ];
+
+        const QUANTITY_WINDOW = 25;
+
+        const WORD_NUMBERS = {
+            'jeden': 1, 'jedna': 1, 'jedno': 1,
+            'dva': 2, 'dvě': 2, 'dve': 2,
+            'tři': 3, 'tri': 3,
+            'čtyři': 4, 'ctyri': 4,
+            'pět': 5, 'pet': 5,
+            'šest': 6, 'sest': 6,
+            'sedm': 7, 'osm': 8,
+            'devět': 9, 'devet': 9, 'deset': 10
         };
 
-        function estimateCaloriesOffline(foodInput) {
-            foodInput = foodInput.toLowerCase();
-            let totalCalories = 0, totalProtein = 0, totalFat = 0, totalCarbs = 0;
-            let matches = [];
+        function findQuantities(text) {
+            const found = [];
 
-            // Try to match foods in database
-            for (let [food, data] of Object.entries(foodDatabase)) {
-                if (foodInput.includes(food)) {
-                    // Extract quantity if available (e.g., "150g" or "2x")
-                    let multiplier = 1;
-                    const quantityMatch = foodInput.match(/(\d+)(?:g|ml|x|ks)/);
-                    if (quantityMatch) {
-                        const qty = parseInt(quantityMatch[1]);
-                        const baseQty = parseInt(data.unit);
-                        multiplier = qty / baseQty;
-                    }
+            const digits = /(\d+(?:[.,]\d+)?)\s*(kg|g|ml|l|ks|x)?/gi;
+            let match;
+            while ((match = digits.exec(text)) !== null) {
+                found.push({
+                    index: match.index,
+                    value: parseFloat(match[1].replace(',', '.')),
+                    unit: (match[2] || '').toLowerCase()
+                });
+            }
 
-                    matches.push({
-                        item: food,
-                        amount: `${quantityMatch ? quantityMatch[0] : data.unit}`,
-                        calories: Math.round(data.calories * multiplier),
-                        protein: Math.round(data.protein * multiplier * 10) / 10,
-                        fat: Math.round(data.fat * multiplier * 10) / 10,
-                        carbs: Math.round(data.carbs * multiplier * 10) / 10
-                    });
-
-                    totalCalories += data.calories * multiplier;
-                    totalProtein += data.protein * multiplier;
-                    totalFat += data.fat * multiplier;
-                    totalCarbs += data.carbs * multiplier;
+            // Czech users write "tři vejce" as often as "3 vejce". Tokenising on
+            // whitespace avoids \b, which misfires on words ending in ě/í/ř.
+            const words = /[^\s.,;:!?()]+/g;
+            let token;
+            while ((token = words.exec(text)) !== null) {
+                const value = WORD_NUMBERS[token[0]];
+                if (value !== undefined) {
+                    found.push({ index: token.index, value: value, unit: '' });
                 }
             }
 
+            // Digits and words are collected in separate passes, but assignment walks the
+            // sentence left to right, so the two have to be merged back into text order.
+            return found.sort((a, b) => a.index - b.index);
+        }
+
+        // Czech puts the amount on either side of the food: "150g rýže" and "rýže 150g"
+        // are both normal. A food word just before the number belongs to the same noun
+        // phrase, so it binds tighter than a food that merely starts soon after it —
+        // without that rule "kuřecí prsa 150g s rýží 200g" hands the 150g to the rice.
+        const PHRASE_GAP = 14;
+
+        function assignQuantities(present, quantities) {
+            const assigned = new Map();
+
+            for (const quantity of quantities) {
+                let before = null, beforeGap = Infinity;
+                let after = null, afterGap = Infinity;
+
+                for (const entry of present) {
+                    if (assigned.has(entry)) continue;
+                    if (entry.position < quantity.index) {
+                        const gap = quantity.index - entry.position;
+                        if (gap < beforeGap) { before = entry; beforeGap = gap; }
+                    } else {
+                        const gap = entry.position - quantity.index;
+                        if (gap < afterGap) { after = entry; afterGap = gap; }
+                    }
+                }
+
+                if (before && beforeGap <= PHRASE_GAP) assigned.set(before, quantity);
+                else if (after && afterGap <= QUANTITY_WINDOW) assigned.set(after, quantity);
+            }
+
+            return assigned;
+        }
+
+        function findFoodPosition(text, food) {
+            let position = -1;
+            for (const stem of food.stems) {
+                const found = text.indexOf(stem);
+                if (found !== -1 && (position === -1 || found < position)) position = found;
+            }
+            return position;
+        }
+
+        function estimateCaloriesOffline(rawInput) {
+            const text = rawInput.toLowerCase();
+            const quantities = findQuantities(text);
+
+            const present = foodDatabase
+                .map(food => ({ food, position: findFoodPosition(text, food) }))
+                .filter(entry => entry.position !== -1)
+                .sort((a, b) => a.position - b.position);
+
+            const assigned = assignQuantities(present, quantities);
+
+            const items = [];
+            let totalCalories = 0, totalProtein = 0, totalFat = 0, totalCarbs = 0;
+            let explicitAmounts = 0;
+
+            for (const entry of present) {
+                const food = entry.food;
+                const quantity = assigned.get(entry);
+                let multiplier = 1;
+                let amount = `${food.base}${food.unit}`;
+
+                if (quantity) {
+                    if (quantity.unit === 'g' || quantity.unit === 'ml') {
+                        multiplier = quantity.value / food.base;
+                        amount = `${quantity.value}${quantity.unit}`;
+                        explicitAmounts++;
+                    } else if (quantity.unit === 'kg' || quantity.unit === 'l') {
+                        multiplier = (quantity.value * 1000) / food.base;
+                        amount = `${quantity.value}${quantity.unit}`;
+                        explicitAmounts++;
+                    } else if (food.piece) {
+                        multiplier = quantity.value;
+                        amount = `${quantity.value} ${food.piece}`;
+                        explicitAmounts++;
+                    }
+                }
+
+                items.push({
+                    item: food.name,
+                    amount: amount,
+                    calories: Math.round(food.kcal * multiplier),
+                    protein: Math.round(food.protein * multiplier * 10) / 10,
+                    fat: Math.round(food.fat * multiplier * 10) / 10,
+                    carbs: Math.round(food.carbs * multiplier * 10) / 10
+                });
+
+                totalCalories += food.kcal * multiplier;
+                totalProtein += food.protein * multiplier;
+                totalFat += food.fat * multiplier;
+                totalCarbs += food.carbs * multiplier;
+            }
+
+            let confidence = 30;
+            let confidenceReason = 'Žádná potravina nebyla rozpoznána';
+            if (items.length > 0) {
+                confidence = 55 + Math.round((explicitAmounts / items.length) * 30);
+                confidenceReason = explicitAmounts === items.length
+                    ? 'Všechny potraviny měly uvedené množství'
+                    : 'U části potravin bylo množství odhadnuto podle běžné porce';
+            }
+
             return {
-                food_description: foodInput,
-                parsed_items: matches,
+                food_description: rawInput,
+                parsed_items: items,
                 total_calories: Math.round(totalCalories),
                 total_protein: Math.round(totalProtein * 10) / 10,
                 total_fat: Math.round(totalFat * 10) / 10,
                 total_carbs: Math.round(totalCarbs * 10) / 10,
-                confidence: matches.length > 0 ? (matches.length === 1 ? 70 : 60) : 30,
-                confidence_reason: matches.length > 0 ? 'Odhad z lokální databáze potravin' : 'Potravina nebyla v databázi',
-                notes: matches.length === 0 ? 'Potravina nebyla rozpoznána. Zkus být více specifický nebo použij AI upgrade.' : 'Offline odhad. Klikni "Vylepšit AI" pro přesnější analýzu.',
-                is_offline: true
+                confidence: confidence,
+                confidence_reason: confidenceReason,
+                notes: items.length === 0
+                    ? 'Potravina nebyla v databázi. Zkus ji pojmenovat jinak, např. "kuřecí prsa 150g".'
+                    : 'Odhad z lokální databáze běžných potravin.'
             };
         }
 
@@ -583,27 +640,48 @@
             return Math.round(tdee * 0.92);
         }
 
-        function saveUserSettings() {
-            const age = parseInt(document.getElementById('age').value);
-            const height = parseInt(document.getElementById('height').value);
-            const weight = parseFloat(document.getElementById('weight').value);
-            const gender = document.getElementById('gender').value;
+        const DEFAULT_SETTINGS = { age: 50, height: 190, weight: 105, gender: 'male' };
 
-            // Uložit do localStorage
-            localStorage.setItem('userSettings', JSON.stringify({ age, height, weight, gender }));
-
-            // Aktualizovat zobrazení
-            updateUserDisplay();
+        // localStorage throws in private browsing and when site data is blocked. The app
+        // stays usable without it; only surviving a reload is lost.
+        function readStoredSettings() {
+            try {
+                return JSON.parse(localStorage.getItem('userSettings'));
+            } catch (e) {
+                return null;
+            }
         }
 
-        function updateUserDisplay() {
-            const settings = JSON.parse(localStorage.getItem('userSettings')) || {
-                age: 50,
-                height: 190,
-                weight: 105,
-                gender: 'male'
-            };
+        function writeStoredSettings(settings) {
+            try {
+                localStorage.setItem('userSettings', JSON.stringify(settings));
+            } catch (e) {
+                // Persistence unavailable — the form fields still drive every calculation.
+            }
+        }
 
+        // The form fields are the source of truth, so a blocked storage cannot break
+        // the estimate. Empty fields are a normal transient state while typing.
+        function getUserSettings() {
+            const age = parseInt(document.getElementById('age').value, 10);
+            const height = parseInt(document.getElementById('height').value, 10);
+            const weight = parseFloat(document.getElementById('weight').value);
+
+            return {
+                age: Number.isFinite(age) ? age : DEFAULT_SETTINGS.age,
+                height: Number.isFinite(height) ? height : DEFAULT_SETTINGS.height,
+                weight: Number.isFinite(weight) ? weight : DEFAULT_SETTINGS.weight,
+                gender: document.getElementById('gender').value || DEFAULT_SETTINGS.gender
+            };
+        }
+
+        function saveUserSettings() {
+            const settings = getUserSettings();
+            writeStoredSettings(settings);
+            updateUserDisplay(settings);
+        }
+
+        function updateUserDisplay(settings) {
             document.getElementById('displayAge').textContent = settings.age;
             document.getElementById('displayHeight').textContent = settings.height;
             document.getElementById('displayWeight').textContent = settings.weight;
@@ -614,38 +692,14 @@
         }
 
         function loadUserSettings() {
-            const settings = JSON.parse(localStorage.getItem('userSettings')) || {
-                age: 50,
-                height: 190,
-                weight: 105,
-                gender: 'male'
-            };
+            const stored = readStoredSettings() || DEFAULT_SETTINGS;
 
-            document.getElementById('age').value = settings.age;
-            document.getElementById('height').value = settings.height;
-            document.getElementById('weight').value = settings.weight;
-            document.getElementById('gender').value = settings.gender;
+            document.getElementById('age').value = stored.age;
+            document.getElementById('height').value = stored.height;
+            document.getElementById('weight').value = stored.weight;
+            document.getElementById('gender').value = stored.gender;
 
-            updateUserDisplay();
-        }
-
-        function saveAPIKey() {
-            const apiKey = document.getElementById('apiKey').value;
-            localStorage.setItem('claudeAPIKey', apiKey);
-        }
-
-        function loadAPIKey() {
-            const apiKey = localStorage.getItem('claudeAPIKey') || '';
-            document.getElementById('apiKey').value = apiKey;
-        }
-
-        function getUserSettings() {
-            return JSON.parse(localStorage.getItem('userSettings')) || {
-                age: 50,
-                height: 190,
-                weight: 105,
-                gender: 'male'
-            };
+            updateUserDisplay(getUserSettings());
         }
 
         // Set current time
@@ -656,106 +710,47 @@
         timeInput.value = `${hours}:${minutes}`;
 
         // Load user settings on page load
-        window.addEventListener('load', function() {
-            loadUserSettings();
-            loadAPIKey();
-        });
+        window.addEventListener('load', loadUserSettings);
 
-        async function callClaudeAPI(prompt, skillName) {
-            let apiKey = localStorage.getItem('claudeAPIKey') || document.getElementById('apiKey').value;
-
-            if (!apiKey) {
-                alert('Prosím, klikni na "Upravit profil" a zadej svůj Claude API key');
-                document.getElementById('settingsPanel').classList.add('open');
-                document.getElementById('apiKey').focus();
-                return null;
-            }
-
-            try {
-                const response = await fetch('https://api.anthropic.com/v1/messages', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-api-key': apiKey,
-                        'anthropic-version': '2023-06-01'
-                    },
-                    body: JSON.stringify({
-                        model: 'claude-3-5-haiku-20241022',
-                        max_tokens: 1024,
-                        system: `Jsi ${skillName} skill. Vždy vrátíš validní JSON bez dalšího textu.`,
-                        messages: [
-                            {
-                                role: 'user',
-                                content: prompt
-                            }
-                        ]
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error?.message || `HTTP Error: ${response.status}`);
-                }
-
-                const data = await response.json();
-                const content = data.content[0].text;
-
-                // Try to parse JSON
-                try {
-                    return JSON.parse(content);
-                } catch (e) {
-                    // If not valid JSON, return the raw text
-                    return content;
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                throw error;
-            }
-        }
-
-        async function estimateCalories(useAI = false) {
+        function estimateCalories() {
             const foodInput = document.getElementById('foodInput').value;
 
             if (!foodInput.trim()) {
-                alert('Prosím, popři co jste konzumoval/a');
+                alert('Prosím, popiš co jsi konzumoval/a');
                 return;
             }
 
             const output = document.getElementById('foodOutput');
             const outputContent = document.getElementById('foodOutputContent');
+            const result = estimateCaloriesOffline(foodInput);
 
             output.classList.add('visible');
-            outputContent.innerHTML = '<div class="loading">⏳ Odhaduju kalorie...</div>';
-
-            try {
-                let result;
-
-                if (useAI) {
-                    // Use Claude AI for better estimate
-                    result = await callClaudeAPI(
-                        `Odhadni kalorie: ${foodInput}`,
-                        'odhad-kaloric'
-                    );
-                } else {
-                    // Use offline database for quick estimate
-                    result = estimateCaloriesOffline(foodInput);
-                }
-
-                // Display result with optional AI upgrade button
-                let htmlOutput = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
-
-                if (!useAI && !result.is_offline) {
-                    htmlOutput += '<button onclick="estimateCalories(true)" style="margin-top: 10px; background: #764ba2; width: auto;">🤖 Vylepšit AI</button>';
-                } else if (!useAI) {
-                    htmlOutput += '<button onclick="estimateCalories(true)" style="margin-top: 10px; background: #764ba2; width: auto;">🤖 Vylepšit AI (vyžaduje API key)</button>';
-                }
-
-                outputContent.innerHTML = htmlOutput;
-            } catch (error) {
-                output.classList.add('error');
-                outputContent.innerHTML = `<strong>❌ Chyba:</strong> ${error.message}`;
-            }
+            outputContent.innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
         }
+
+        const MEAL_NAMES = {
+            lunch:  { nazev: 'Oběd',    akuzativ: 'oběd' },
+            snack:  { nazev: 'Svačina', akuzativ: 'svačinu' },
+            dinner: { nazev: 'Večeře',  akuzativ: 'večeři' }
+        };
+
+        const MEAL_SUGGESTIONS = {
+            lunch: [
+                { nazev: 'Kuřecí prsa s rýží a zeleninou', kalorie: 485 },
+                { nazev: 'Hovězí na grilu s bramborami a salátem', kalorie: 511 },
+                { nazev: 'Losos s pečenými brambory', kalorie: 408 }
+            ],
+            snack: [
+                { nazev: 'Jogurt s granolou a ovocem', kalorie: 251 },
+                { nazev: 'Sýr s tmavým chlebem', kalorie: 220 },
+                { nazev: 'Jablko a banán', kalorie: 170 }
+            ],
+            dinner: [
+                { nazev: 'Kuřecí grilované se salátem', kalorie: 333 },
+                { nazev: 'Krůtí řízek s brambory a zeleninou', kalorie: 415 },
+                { nazev: 'Hovězí guláš s chlebem', kalorie: 425 }
+            ]
+        };
 
         function recommendMealsOffline(consumed, time, settings) {
             const dailyCalories = calculateDailyCalories(settings.age, settings.height, settings.weight, settings.gender);
@@ -776,71 +771,57 @@
                 mealCalories = { snack: Math.round(remaining * 0.25), dinner: Math.round(remaining * 0.75) };
             }
 
-            const recommendations = remainingMeals.map(meal => ({
-                meal_type: meal,
-                target_calories: mealCalories[meal],
-                suggestions: ['Kuřecí s rýží', 'Hovězí s bramborami', 'Ryba se zeleninou'].slice(0, 2)
-            }));
+            if (remaining <= 0) {
+                return {
+                    snedeno_dnes: consumed,
+                    denni_cil: dailyCalories,
+                    zbyva_kalorii: remaining,
+                    cas: time,
+                    jidla: [],
+                    poznamka: `Denní cíl je vyčerpaný, jsi ${Math.abs(remaining)} kcal nad ním. Na zbytek dne už jen voda, čaj nebo nesladká káva.`
+                };
+            }
+
+            const jidla = remainingMeals.map(meal => {
+                const target = mealCalories[meal];
+                return {
+                    jidlo: MEAL_NAMES[meal].nazev,
+                    cilove_kalorie: target,
+                    navrhy: [...MEAL_SUGGESTIONS[meal]]
+                        .sort((a, b) => Math.abs(a.kalorie - target) - Math.abs(b.kalorie - target))
+                };
+            });
+
+            const seznam = remainingMeals.map(meal => MEAL_NAMES[meal].akuzativ);
+            const vypis = seznam.length > 1
+                ? `${seznam.slice(0, -1).join(', ')} a ${seznam[seznam.length - 1]}`
+                : seznam[0];
 
             return {
-                consumed_today: consumed,
-                daily_goal: dailyCalories,
-                remaining_calories: remaining,
-                current_time: time,
-                remaining_meals: remainingMeals,
-                meal_recommendations: recommendations,
-                notes: remaining > 0 ? `Máš ${remaining} kcal na ${remainingMeals.join(', ')}. Offline odhad.` : 'Dosáhl jsi svého denního cíle!',
-                confidence: 75,
-                is_offline: true
+                snedeno_dnes: consumed,
+                denni_cil: dailyCalories,
+                zbyva_kalorii: remaining,
+                cas: time,
+                jidla: jidla,
+                poznamka: `Zbývá ti ${remaining} kcal na ${vypis}. Návrhy jsou seřazené podle toho, jak sedí k cílovým kaloriím. Pokud se cítíš sytý dřív, není nutné všechno sníst.`
             };
         }
 
-        async function recommendMeals(useAI = false) {
+        function recommendMeals() {
             const consumed = document.getElementById('consumedCalories').value;
             const time = document.getElementById('currentTime').value;
-            const settings = getUserSettings();
 
             if (!consumed) {
-                alert('Prosím, zadej kolik kalorií jsi už konzumoval/a');
+                alert('Prosím, zadej kolik kalorií jsi už dnes snědl/a');
                 return;
             }
 
             const output = document.getElementById('mealsOutput');
             const outputContent = document.getElementById('mealsOutputContent');
+            const result = recommendMealsOffline(parseInt(consumed), time, getUserSettings());
 
             output.classList.add('visible');
-            outputContent.innerHTML = '<div class="loading">⏳ Připravuji doporučení...</div>';
-
-            try {
-                let result;
-
-                if (useAI) {
-                    const dailyCalories = calculateDailyCalories(settings.age, settings.height, settings.weight, settings.gender);
-                    const genderText = settings.gender === 'male' ? 'muž' : 'žena';
-
-                    const prompt = `Uživatel: ${genderText}, ${settings.age} let, ${settings.height}cm, ${settings.weight}kg
-Konzumoval: ${consumed} kcal
-Čas: ${time}
-Denní cíl: ${dailyCalories} kcal
-
-Doporuč zdravý jídelníček na zbytek dne.`;
-
-                    result = await callClaudeAPI(prompt, 'doporučeni-kaloric');
-                } else {
-                    result = recommendMealsOffline(parseInt(consumed), time, settings);
-                }
-
-                let htmlOutput = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
-
-                if (!useAI && result.is_offline) {
-                    htmlOutput += '<button onclick="recommendMeals(true)" style="margin-top: 10px; background: #764ba2; width: auto;">🤖 Vylepšit AI (vyžaduje API key)</button>';
-                }
-
-                outputContent.innerHTML = htmlOutput;
-            } catch (error) {
-                output.classList.add('error');
-                outputContent.innerHTML = `<strong>❌ Chyba:</strong> ${error.message}`;
-            }
+            outputContent.innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
         }
 
         // Allow Enter in textareas

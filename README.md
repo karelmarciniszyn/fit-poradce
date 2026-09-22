@@ -19,31 +19,44 @@ Aplikace je optimalizována pro typického sedavého muže:
 
 ## Jak to funguje
 
-Aplikace používá dva Claude skills:
+Projekt má dvě části, které řeší totéž dvěma různými způsoby.
 
-1. **odhad-kaloric** - Odhaduje kalorickou hodnotu potraviny z jejího popisu
-2. **doporučeni-kaloric** - Doporučuje plán na zbytek dne
+**Claude skills** (složka `skills/`) — odhad dělá model, takže zvládne volný text
+i potraviny, které nikdo předem nevyjmenoval:
 
-Veškerá logika je řešena AI modelem, žádné hardcoded tabulky.
+1. **odhad-kaloric** — odhadne kalorickou hodnotu potraviny z jejího popisu
+2. **doporučeni-kaloric** — doporučí plán na zbytek dne
+
+**Webová stránka** (`index.html`) — počítá si vlastním JavaScriptem nad databází
+patnácti běžných potravin. Stránka skills nevolá a na nic se nepřipojuje.
+
+Kompromis je vědomý: stránka je vstupní branou pro reklamu, takže musí fungovat
+okamžitě a bez přihlašování. Cenou je, že rozpozná jen potraviny ze své databáze
+a u neznámé vrátí nulu s vysvětlením. Na přesnější odhad slouží skills v Claude.
 
 ## Webové rozhraní
 
 Aplikace je dostupná na webu jako GitHub Pages. Obsahuje:
+- Nastavitelný profil (věk, výška, váha, pohlaví) s živým přepočtem denního cíle
 - Formulář pro odhad kalorií
 - Formulář pro doporučení jídelníčku
-- Informace o aplikaci
+
+Denní cíl se počítá rovnicí Mifflin-St Jeor s faktorem 1,2 pro sedavou práci.
+Profil se ukládá do prohlížeče; když je úložiště zakázané, aplikace funguje dál,
+jen se nastavení nepřenese do dalšího spuštění.
 
 ## Technologie
 
-- Claude Haiku 3.5 (effort: xhigh)
-- Claude API
-- HTML + CSS + JavaScript (vanilla)
+- Skills: Claude Haiku (effort: xhigh)
+- Web: HTML + CSS + JavaScript (vanilla), bez závislostí a bez buildu
 
 ## Jak spustit lokálně
 
 1. Klonuj repository
 2. Otevři `index.html` v prohlížeči
-3. Zadej svůj Claude API key (získáš na https://console.anthropic.com)
+
+Žádný API klíč ani připojení k internetu není potřeba — stránka počítá všechno
+lokálně v prohlížeči.
 
 ## GitHub Pages
 

@@ -66,16 +66,18 @@ Výstup: ~320 kcal (bez tuku na vaření)
 Confidence: 70% (nevíme přesný obsah tuku)
 ```
 
-## Integrace s aplikací
+## Vztah k webové aplikaci
 
-Skill je volán přes Claude API. Web interface pošle:
-```javascript
-const response = await fetch('...', {
-  prompt: `Odhadni kalorie: ${userInput}`
-})
-```
+Skill a webová stránka jsou dvě oddělené cesty ke stejnému výsledku:
 
-Skill vrátí strukturovaný JSON.
+- **Skill** (tenhle soubor) běží v Claude. Zvládne volný text, neznámé potraviny
+  i odhad podle kontextu, protože odhaduje model.
+- **`index.html`** obsahuje vlastní offline odhad v JavaScriptu nad malou databází
+  patnácti běžných potravin. Funguje bez API klíče a bez připojení, ale rozpozná
+  jen to, co má v databázi.
+
+Stránka skill **nevolá** — není mezi nimi žádné API propojení. Pokud potřebuješ
+přesnější odhad než ten offline, spusť tenhle skill přímo v Claude.
 
 ## Testování
 

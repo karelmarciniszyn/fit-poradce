@@ -84,16 +84,19 @@ Skill by měl zohledňovat:
 3. **Bez medicínské rady** - Skill není náhrada za lékaře
 4. **Není nutné dodržovat přesně** - Pokud je člověk sytý, nemusí vše pojíst
 
-## Integrace s aplikací
+## Vztah k webové aplikaci
 
-Skill je volán přes Claude API. Web interface pošle:
-```javascript
-const response = await fetch('...', {
-  prompt: `Konzumoval jsem ${calorieInput} kcal, je ${timeEstimate}, co si mám dát?`
-})
-```
+Skill a webová stránka jsou dvě oddělené cesty ke stejnému výsledku:
 
-Skill vrátí strukturovaný JSON s doporučeními.
+- **Skill** (tenhle soubor) běží v Claude. Zohlední preference, dietní omezení
+  i netypickou situaci, protože doporučuje model.
+- **`index.html`** počítá BMR a rozděluje zbývající kalorie vlastním JavaScriptem
+  a nabízí jídla z pevného seznamu. Funguje bez API klíče, ale nabídka se nemění
+  podle toho, co uživatel napíše.
+
+Stránka skill **nevolá** — není mezi nimi žádné API propojení. Výpočet denního cíle
+(Mifflin-St Jeor + faktor 1,2 pro sedavou práci) je ale v obou stejný, takže
+`denni_cil` ze stránky a z tohoto skillu vychází shodně.
 
 ## Testování
 
